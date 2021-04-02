@@ -6,4 +6,5 @@ require (
 	github.com/google/pprof v0.0.0-20210323184331-8eee2492667d // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20210331232236-9bc5433e3b46 // indirect
 	golang.org/x/sys v0.0.0-20210331175145-43e1dd70ce54 // indirect
+	lukechampine.com/uint128 v1.1.1 // indirect
 )
