@@ -13,7 +13,8 @@ import (
 	"net"
 	"os"
 	"strconv"
-	. "lukechampine.com/uint128"
+
+	"lukechampine.com/uint128"
 )
 
 type DBReader interface {
@@ -133,15 +134,15 @@ var usagetype_position = [25]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 
 const api_version string = "8.4.0"
 
-var max_ipv4_range = From64(4294967295)
-var max_ipv6_range = From64(0)
-var from_v4mapped = From64(281470681743360)
-var to_v4mapped = From64(281474976710655)
-var from_6to4 = From64(0)
-var to_6to4 = From64(0)
-var from_teredo = From64(0)
-var to_teredo = From64(0)
-var last_32bits = From64(4294967295)
+var max_ipv4_range = uint128.From64(4294967295)
+var max_ipv6_range = uint128.From64(0)
+var from_v4mapped = uint128.From64(281470681743360)
+var to_v4mapped = uint128.From64(281474976710655)
+var from_6to4 = uint128.From64(0)
+var to_6to4 = uint128.From64(0)
+var from_teredo = uint128.From64(0)
+var to_teredo = uint128.From64(0)
+var last_32bits = uint128.From64(4294967295)
 
 const countryshort uint32 = 0x00001
 const countrylong uint32 = 0x00002
@@ -171,10 +172,10 @@ const missing_file string = "Invalid database file."
 const not_supported string = "This parameter is unavailable for selected data file. Please upgrade the data file."
 
 // get IP type and calculate IP number; calculates index too if exists
-func (d *DB) checkip(ip string) (iptype uint32, ipnum Uint128, ipindex uint32) {
+func (d *DB) checkip(ip string) (iptype uint32, ipnum uint128.Uint128, ipindex uint32) {
 	iptype = 0
-	ipnum = From64(0)
-	ipnumtmp := From64(0)
+	ipnum = uint128.From64(0)
+	ipnumtmp := uint128.From64(0)
 	ipindex = 0
 	ipaddress := net.ParseIP(ip)
 
@@ -183,7 +184,7 @@ func (d *DB) checkip(ip string) (iptype uint32, ipnum Uint128, ipindex uint32) {
 
 		if v4 != nil {
 			iptype = 4
-			ipnum = From64(uint64(binary.BigEndian.Uint32(v4)))
+			ipnum = uint128.From64(uint64(binary.BigEndian.Uint32(v4)))
 		} else {
 			v6 := ipaddress.To16()
 
@@ -203,7 +204,7 @@ func (d *DB) checkip(ip string) (iptype uint32, ipnum Uint128, ipindex uint32) {
 				} else if ipnum.Cmp(from_teredo) >= 0 && ipnum.Cmp(to_teredo) <= 0 {
 					// Teredo so need to remap to ipv4
 					iptype = 4
-					ipnum = Uint128{^ipnum.Lo, ^ipnum.Hi}
+					ipnum = uint128.Uint128{^ipnum.Lo, ^ipnum.Hi}
 					ipnum = ipnum.And(last_32bits)
 				}
 			}
@@ -213,13 +214,13 @@ func (d *DB) checkip(ip string) (iptype uint32, ipnum Uint128, ipindex uint32) {
 		if d.meta.ipv4indexbaseaddr > 0 {
 			ipnumtmp = ipnum.Rsh(16)
 			ipnumtmp = ipnumtmp.Lsh(3)
-			ipindex =  uint32(ipnumtmp.Add(From64(uint64(d.meta.ipv4indexbaseaddr))).Lo)
+			ipindex = uint32(ipnumtmp.Add(uint128.From64(uint64(d.meta.ipv4indexbaseaddr))).Lo)
 		}
 	} else if iptype == 6 {
 		if d.meta.ipv6indexbaseaddr > 0 {
 			ipnumtmp = ipnum.Rsh(112)
 			ipnumtmp = ipnumtmp.Lsh(3)
-			ipindex = uint32(ipnumtmp.Add(From64(uint64(d.meta.ipv6indexbaseaddr))).Lo)
+			ipindex = uint32(ipnumtmp.Add(uint128.From64(uint64(d.meta.ipv6indexbaseaddr))).Lo)
 		}
 	}
 	return
@@ -260,13 +261,13 @@ func (d *DB) readuint32(pos uint32) (uint32, error) {
 }
 
 // read unsigned 128-bit integer
-func (d *DB) readuint128(pos uint32) (Uint128, error) {
+func (d *DB) readuint128(pos uint32) (uint128.Uint128, error) {
 	pos2 := int64(pos)
-	retval := From64(0)
+	retval := uint128.From64(0)
 	data := make([]byte, 16)
 	_, err := d.f.ReadAt(data, pos2-1)
 	if err != nil {
-		return From64(0), err
+		return uint128.From64(0), err
 	}
 
 	// little endian to big endian
@@ -345,23 +346,23 @@ func OpenDBWithReader(reader DBReader) (*DB, error) {
 
 	_max_ipv6_range := big.NewInt(0)
 	_max_ipv6_range.SetString("340282366920938463463374607431768211455", 10)
-	max_ipv6_range = FromBig(_max_ipv6_range)
+	max_ipv6_range = uint128.FromBig(_max_ipv6_range)
 
 	_from_6to4 := big.NewInt(0)
 	_from_6to4.SetString("42545680458834377588178886921629466624", 10)
-	from_6to4 = FromBig(_from_6to4)
+	from_6to4 = uint128.FromBig(_from_6to4)
 
 	_to_6to4 := big.NewInt(0)
 	_to_6to4.SetString("42550872755692912415807417417958686719", 10)
-	to_6to4 = FromBig(_to_6to4)
+	to_6to4 = uint128.FromBig(_to_6to4)
 
 	_from_teredo := big.NewInt(0)
 	_from_teredo.SetString("42540488161975842760550356425300246528", 10)
-	from_teredo = FromBig(_from_teredo)
+	from_teredo = uint128.FromBig(_from_teredo)
 
 	_to_teredo := big.NewInt(0)
 	_to_teredo.SetString("42540488241204005274814694018844196863", 10)
-	to_teredo = FromBig(_to_teredo)
+	to_teredo = uint128.FromBig(_to_teredo)
 
 	db.f = reader
 
@@ -836,9 +837,9 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 	var mid uint32
 	var rowoffset uint32
 	var rowoffset2 uint32
-	ipfrom := From64(0)
-	ipto := From64(0)
-	maxip := From64(0)
+	ipfrom := uint128.From64(0)
+	ipto := uint128.From64(0)
+	maxip := uint128.From64(0)
 
 	if iptype == 4 {
 		baseaddr = d.meta.ipv4databaseaddr
@@ -862,10 +863,12 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 		if err != nil {
 			return x, err
 		}
+
+		fmt.Println(low, high)
 	}
 
 	if ipno.Cmp(maxip) >= 0 {
-		ipno = ipno.Sub(From64(1))
+		ipno = ipno.Sub(uint128.From64(1))
 	}
 
 	for low <= high {
@@ -878,13 +881,13 @@ func (d *DB) query(ipaddress string, mode uint32) (IP2Locationrecord, error) {
 			if err != nil {
 				return x, err
 			}
-			ipfrom = From64(uint64(ipfrom32))
+			ipfrom = uint128.From64(uint64(ipfrom32))
 
 			ipto32, err := d.readuint32(rowoffset2)
 			if err != nil {
 				return x, err
 			}
-			ipto = From64(uint64(ipto32))
+			ipto = uint128.From64(uint64(ipto32))
 
 		} else {
 			ipfrom, err = d.readuint128(rowoffset)
@@ -1088,9 +1091,9 @@ func (d *DB) query2(ipaddress string, mode uint32, threshold uint32) (IP2Locatio
 	var mid uint32
 	var rowoffset uint32
 	var rowoffset2 uint32
-	ipfrom := From64(0)
-	ipto := From64(0)
-	maxip := From64(0)
+	ipfrom := uint128.From64(0)
+	ipto := uint128.From64(0)
+	maxip := uint128.From64(0)
 
 	if iptype == 4 {
 		baseaddr = d.meta.ipv4databaseaddr
@@ -1117,11 +1120,11 @@ func (d *DB) query2(ipaddress string, mode uint32, threshold uint32) (IP2Locatio
 	}
 
 	if ipno.Cmp(maxip) >= 0 {
-		ipno = ipno.Sub(From64(1))
+		ipno = ipno.Sub(uint128.From64(1))
 	}
 
 	for low <= high {
-		if high - low > threshold {
+		if high-low > threshold {
 			mid = ((low + high) >> 1)
 			rowoffset = baseaddr + (mid * colsize)
 			rowoffset2 = rowoffset + colsize
@@ -1131,13 +1134,13 @@ func (d *DB) query2(ipaddress string, mode uint32, threshold uint32) (IP2Locatio
 				if err != nil {
 					return x, err
 				}
-				ipfrom = From64(uint64(ipfrom32))
+				ipfrom = uint128.From64(uint64(ipfrom32))
 
 				ipto32, err := d.readuint32(rowoffset2)
 				if err != nil {
 					return x, err
 				}
-				ipto = From64(uint64(ipto32))
+				ipto = uint128.From64(uint64(ipto32))
 
 			} else {
 				ipfrom, err = d.readuint128(rowoffset)
@@ -1324,13 +1327,13 @@ func (d *DB) query2(ipaddress string, mode uint32, threshold uint32) (IP2Locatio
 					if err != nil {
 						return x, err
 					}
-					ipfrom = From64(uint64(ipfrom32))
+					ipfrom = uint128.From64(uint64(ipfrom32))
 
 					ipto32, err := d.readuint32(rowoffset2)
 					if err != nil {
 						return x, err
 					}
-					ipto = From64(uint64(ipto32))
+					ipto = uint128.From64(uint64(ipto32))
 
 				} else {
 					ipfrom, err = d.readuint128(rowoffset)
@@ -1349,153 +1352,153 @@ func (d *DB) query2(ipaddress string, mode uint32, threshold uint32) (IP2Locatio
 						firstcol = 16 // 16 bytes for ipv6
 						// rowoffset = rowoffset + 12 // coz below is assuming all columns are 4 bytes, so got 12 left to go to make 16 bytes total
 					}
-		
+
 					row := make([]byte, colsize-firstcol) // exclude the ip from field
 					_, err := d.f.ReadAt(row, int64(rowoffset+firstcol-1))
 					if err != nil {
 						return x, err
 					}
-		
+
 					if mode&countryshort == 1 && d.country_enabled {
 						// x.Country_short = readstr(readuint32(rowoffset + country_position_offset))
 						if x.Country_short, err = d.readstr(d.readuint32_row(row, d.country_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&countrylong != 0 && d.country_enabled {
 						// x.Country_long = readstr(readuint32(rowoffset + country_position_offset) + 3)
 						if x.Country_long, err = d.readstr(d.readuint32_row(row, d.country_position_offset) + 3); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&region != 0 && d.region_enabled {
 						// x.Region = readstr(readuint32(rowoffset + region_position_offset))
 						if x.Region, err = d.readstr(d.readuint32_row(row, d.region_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&city != 0 && d.city_enabled {
 						// x.City = readstr(readuint32(rowoffset + city_position_offset))
 						if x.City, err = d.readstr(d.readuint32_row(row, d.city_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&isp != 0 && d.isp_enabled {
 						// x.Isp = readstr(readuint32(rowoffset + isp_position_offset))
 						if x.Isp, err = d.readstr(d.readuint32_row(row, d.isp_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&latitude != 0 && d.latitude_enabled {
 						// x.Latitude = readfloat(rowoffset + latitude_position_offset)
 						x.Latitude = d.readfloat_row(row, d.latitude_position_offset)
 					}
-		
+
 					if mode&longitude != 0 && d.longitude_enabled {
 						// x.Longitude = readfloat(rowoffset + longitude_position_offset)
 						x.Longitude = d.readfloat_row(row, d.longitude_position_offset)
 					}
-		
+
 					if mode&domain != 0 && d.domain_enabled {
 						// x.Domain = readstr(readuint32(rowoffset + domain_position_offset))
 						if x.Domain, err = d.readstr(d.readuint32_row(row, d.domain_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&zipcode != 0 && d.zipcode_enabled {
 						// x.Zipcode = readstr(readuint32(rowoffset + zipcode_position_offset))
 						if x.Zipcode, err = d.readstr(d.readuint32_row(row, d.zipcode_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&timezone != 0 && d.timezone_enabled {
 						// x.Timezone = readstr(readuint32(rowoffset + timezone_position_offset))
 						if x.Timezone, err = d.readstr(d.readuint32_row(row, d.timezone_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&netspeed != 0 && d.netspeed_enabled {
 						// x.Netspeed = readstr(readuint32(rowoffset + netspeed_position_offset))
 						if x.Netspeed, err = d.readstr(d.readuint32_row(row, d.netspeed_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&iddcode != 0 && d.iddcode_enabled {
 						// x.Iddcode = readstr(readuint32(rowoffset + iddcode_position_offset))
 						if x.Iddcode, err = d.readstr(d.readuint32_row(row, d.iddcode_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&areacode != 0 && d.areacode_enabled {
 						// x.Areacode = readstr(readuint32(rowoffset + areacode_position_offset))
 						if x.Areacode, err = d.readstr(d.readuint32_row(row, d.areacode_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&weatherstationcode != 0 && d.weatherstationcode_enabled {
 						// x.Weatherstationcode = readstr(readuint32(rowoffset + weatherstationcode_position_offset))
 						if x.Weatherstationcode, err = d.readstr(d.readuint32_row(row, d.weatherstationcode_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&weatherstationname != 0 && d.weatherstationname_enabled {
 						// x.Weatherstationname = readstr(readuint32(rowoffset + weatherstationname_position_offset))
 						if x.Weatherstationname, err = d.readstr(d.readuint32_row(row, d.weatherstationname_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&mcc != 0 && d.mcc_enabled {
 						// x.Mcc = readstr(readuint32(rowoffset + mcc_position_offset))
 						if x.Mcc, err = d.readstr(d.readuint32_row(row, d.mcc_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&mnc != 0 && d.mnc_enabled {
 						// x.Mnc = readstr(readuint32(rowoffset + mnc_position_offset))
 						if x.Mnc, err = d.readstr(d.readuint32_row(row, d.mnc_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&mobilebrand != 0 && d.mobilebrand_enabled {
 						// x.Mobilebrand = readstr(readuint32(rowoffset + mobilebrand_position_offset))
 						if x.Mobilebrand, err = d.readstr(d.readuint32_row(row, d.mobilebrand_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					if mode&elevation != 0 && d.elevation_enabled {
 						// f, _ := strconv.ParseFloat(readstr(readuint32(rowoffset + elevation_position_offset)), 32)
 						res, err := d.readstr(d.readuint32_row(row, d.elevation_position_offset))
 						if err != nil {
 							return x, err
 						}
-		
+
 						f, _ := strconv.ParseFloat(res, 32)
 						x.Elevation = float32(f)
 					}
-		
+
 					if mode&usagetype != 0 && d.usagetype_enabled {
 						// x.Usagetype = readstr(readuint32(rowoffset + usagetype_position_offset))
 						if x.Usagetype, err = d.readstr(d.readuint32_row(row, d.usagetype_position_offset)); err != nil {
 							return x, err
 						}
 					}
-		
+
 					return x, nil
 				}
 			}

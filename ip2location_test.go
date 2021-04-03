@@ -97,7 +97,7 @@ func TestSampleNew(t *testing.T) {
 	db.Close()
 }
 
-func BenchmarkGetAll1(b *testing.B) {
+func BenchmarkGetAllOld(b *testing.B) {
 	db, err := OpenDB("./IP2LOCATION-LITE-DB11.BIN")
 
 	if err != nil {
